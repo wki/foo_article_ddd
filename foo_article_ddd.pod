@@ -15,14 +15,13 @@ und erweitert.
 
 Die vordefinierten Muster regeln im großen Maßstab die Einbindung fremder
 Systeme sowie Schnittstellen zur Außenwelt und leisten Unterstützung bei der
-Einteilung der umzusetzenden Anforderungen in kleinere Einheiten. Die
-Struktutierung der erzeugten Klassen in Module, Pakete oder die Vergabe von
-Namensräumen (je nach verwendeter Programmiersprache) wird ebenso abgedeckt.
+Einteilung der umzusetzenden Anforderungen in kleinere Einheiten. Im
+Detail-Maßstab wird die Aufteilung der Funktionalitäten in Klassen geregelt
+sowie die Strukturierung der erzeugten Klassen abgedeckt.
 
-Sämtliche erzeugen Klassen sind voneinander unabhängig und besitzen
-grundsätlich keine gegenseitigen Wechselwirkungen. Das ermöglicht den
-einfachen Austausch einer Klasse durch eine alternative Implementierung mit
-gleichem Interface.
+Sämtliche Klassen sind voneinander unabhängig und besitzen typischerweise
+keine gegenseitigen Wechselwirkungen. Das ermöglicht den einfachen Austausch
+einer Klasse durch eine alternative Implementierung mit gleichem Interface.
 
 Zentraler Dreh- und Angelpunkt bei allen Aktivitäten rund um DDD ist eine
 allgemeingültige von allen Beteiligten gesprochene Sprache. Die darin
@@ -228,11 +227,12 @@ Ein solcher Service könnte in etwa so aussehen:
 
 =head2 Zusammenspiel der Komponenten
 
-So ehrenswert das Ziel auch zunächst klingt, möglichst kleine jeweils nur für
+So ansprechend das Ziel auch zunächst klingt, möglichst kleine jeweils nur für
 eine Aufgabe zuständige Klassen zu erstellen, irgendwann muss entschieden
 werden, welche Klasse in unserem Geflecht wofür eingesetzt wird. Auch muss ein
 Weg gefunden werden, die Objekte der von außen ansprechbaren Dienste zu
-instantiieren. Bei größeren Projekten kann das schon eine Herausfoderung sein.
+instantiieren. Bei größeren Projekten kann das schon eine Herausforderung
+sein.
 
 An dieser Stelle greifen wir auf L<Bread::Board> zurück, indem wir eine DSL
 darauf aufbauen, die die DDD-Begrifflichkeiten als Schlüsselworte definiert.
@@ -315,7 +315,7 @@ Und ebenso einfach ist die Abfrage des letzten Messwertes:
 
     my $domain = Domain->new(storage_dir => '/path/to/storage');
     my $sensor = $domain->measurement->sensor_by_name('rio/aussen/temperatur');
-    say "Aussentemperatur in Rio ist: ", $sensor->latest_measurement;
+    say "Außentemperatur in Rio ist: ", $sensor->latest_measurement;
 
 =head2 Fazit
 
