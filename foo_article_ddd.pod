@@ -1,0 +1,339 @@
+=encoding utf-8
+
+=head1 DDD Workshop bei Erlangen.PM
+
+=begin internal
+
+Zweck des Artikels:
+  * Information über Erlangen.PM Aktivität
+  * Sinn hinter DDD verdeutlichen
+  * ersten Einblick gewinnen
+
+Was steckt hinter DDD? Was ist das?
+  * Vorgehensweise
+  * Von Vogelperspektive bis zum Detail
+  * Anwendung vorgegebener Patterns
+  * Einhaltung von OO Prinzipien (z.B. SOLID)
+
+Was unterscheidet DDD von anderen Vorgehensweisen?
+  * Business steht im Vordergrund, nicht Daten
+  * Sprache ist zentrales Element
+  * Code reflektiert die Sprache
+  * klare Regeln statt schwammiger Ideen
+
+=end internal
+
+=head2 Hintergrund
+
+Bereits im Jahr 2003 hat Eric Evans in seinem Buch "Domain Driven Design" [1]
+eine Vorgehensweise beschrieben, mit der größere IT-Projekte umgesetzt werden
+können. Durch den Einsatz von Patterns mit klar definierten
+Verwendungs-Szenarien lässt sich ein großes Projekt dabei schnell in kleine
+Einzelteile zerlegen die dann ebenso problemlos implementierbar sind. In
+praktisch nachvollziehbarer Form wird dieses Vorgehen von Vaughn Vernon in
+seinem 2013 erschienenen Buch "Implementing Domain Driven Design" [2] vertieft
+und erweitert.
+
+Die vordefinierten Patterns regeln im Großen Maßstab die Einbindung fremder
+Systeme und leisten Unterstützung bei der Einteilung der umzusetzenden
+Anforderungen in kleinere Einheiten. Die Struktutierung der erzeugten Klassen
+in Module, Pakete oder die Vergabe von Namensräumen (je nach verwendeter
+Programmiersprache) wird ebenso geregelt.
+
+Sämtliche erzeugen Klassen sind voneinander unabhängig und besitzen
+grundsätlich keine gegenseitigen Wechselwirkungen. Das ermöglicht den
+einfachen Austausch einer Klasse durch eine alternative Implementierung mit
+gleichem Interface.
+
+Zentraler Dreh- und Angelpunkt bei allen Aktivitäten rund um DDD ist eine
+allgemeingültige von allen Beteiligten gesprochene Sprache. Die darin
+verwendeten Begriffe müssen dem Jargon der Fachleute entsprechen, für die die
+das IT Projekt entwickelt wird. Die Bezeichnungen sämtlicher Aktoren,
+Aktivitäten, Eigenschaften und Anwendungsfälle müssen sich in identischer
+Schreibweise im Code und den Tests wiederfinden. Theoretisch muss ein Anwender
+ihm vorgelegte Code-Fragmente anhand der verwendeten Begriffe verstehen
+können.
+
+Anhand eines kleinen Projektes haben wir uns bei Erlangen.PM an einem Samstag
+mit den Grundkonzepten von Domain Driven Design (kurz DDD) vertraut gemacht.
+Die Umsetzung eines Anwendungsfalles möchte ich nachfolgend zeigen.
+
+=head2 Unser Projekt
+
+Der Begriff "Projekt" ist eigentlich zu hoch gegriffen, denn der Umfang der
+Aufgabenstellung wäre bequem an einem Sonntag nachmittag zu erledigen. Aber
+für Lernzwecke ist ein nicht zu gigantischer Umfang gerade Recht.
+
+Wir wollen ein System erstellen, das Messwerte (z.B. Temperatur) von
+entfernten Sensoren entgegen nimmt und speichert. Die gespeicherten Messwerte
+sollen dann in einer weiteren Ausbaustufe zu größeren Zeitintervallen (z.B.
+Stunde oder Tag) zusammengefasst werden, denn für die gegebene Anforderung
+sind für die vergangene Woche bestenfalls Minimal- oder Maximal-Werte
+relevant, die einzelnen Ablesungen hingegen nicht mehr. Immer wenn ein neuer
+Messwert eintrifft, soll darüber entschieden werden, ob ein Alarm ausgelöst
+werden muss. Über ein geeignetes Interface soll eine Anzeige der Messwerte der
+einzelnen Sensoren möglich sein.
+
+Da Sprache das zentrale Element von DDD ist, fangen wir damit an, die Sprache
+zu entwickeln. Hätten wir einen Auftraggeber, so könnten wir den Großteil der
+Sprache vermutlich aus den Anforderungs-Dokumenten herauslesen, müssten jedoch
+für Durchgängigkeit und Widerspruchsfreiheit sorgen. In unserem Fall fällt die
+Sprache einfach aus:
+
+=over
+
+=item 
+
+A sensor provides a measurement result as an integer value.
+
+=item 
+
+A sensor has a unique 3-part name (eg. 'rio/bad/temperatur') [sensor_id]
+
+=item 
+
+A measurement consists of the result and the timestamp it was measured on.
+
+=item 
+
+Every sensor knows its latest measurement.
+
+=back
+
+=head2 Umsetzung
+
+Bei so einfachen Anforderungen juckt es förmlich in den Fingerspitzen, eine
+Klasse "Sensor" zu erzeugen, die aus den notwendigen Attributen zur Aufnahme
+des Namens, des letzten Messwertes und einem Zeitstempel besteht. Jedesmal,
+wenn ein neuer Messwert angeliefert wird, werden die notwendigen Attribute
+gesetzt. Fertig.
+
+Aber das hat mit der fachlichen Logik unseres Projektes nichts zu tun. Beim
+Einsatz von DDD werden keinesfalls irgendwelche Attribute gesetzt. Blicken wir
+zurück auf die Definition unserer Sprache so lautet die Formulierung beim
+Anwendungsfall "provide measurement result". Damit unser Code diesen Fall
+abdeckt und verständlich macht, müssen wir eine Methode
+C<provide_measurement_result> erzeugen, die zum Anliefern eines neuen
+Messwertes verwendet wird. Damit niemand aus Versehen doch Attribute
+verändert, könnten wir sie noch vor Überschreiben schützen.
+
+In der Welt von DDD werden Dinge, die von Außen angesprochen werden und
+identifizierbar sind (in unserem Fall über den eindeutigen Namen), in Form
+eines so genannten B<Aggregate> implementiert. Der Code dafür könnte
+vereinfacht so aussehen. Um die Konzentration auf das Wesentliche zu lenken,
+sind sämtliche C<package> Namen stark gekürzt, notwendige Abhängigkeiten
+oder Rollen fehlen teilweise und unwichtige Details sind ausgelassen worden.
+
+    package Sensor;
+    use Moose;
+    extends 'DDD::Aggregate';
+    
+    has id => (
+        is     => 'ro',
+        isa    => 'SensorId', # a Moose type
+        coerce => 1,          # will allow a string here
+    );
+    
+    has latest_measurement => (
+        is     => 'rw',
+        isa    => 'Measurement', # a Moose type
+        coerce => 1,             # will allow an int here
+        writer => '_set_latest_measurement',
+    );
+    
+    sub provide_measurement_result {
+        my ($self, $result_or_value) = @_;
+
+        $self->_set_latest_measurement($result_or_value);
+        $self->publish(
+            MeasurementProvided->new(
+                sensor_id   => $self->id,
+                measurement => $self->latest_measurement
+            )
+        );
+    }
+
+So einfach dieser Code auch aussieht, scheinen doch eine Menge an Funktionen
+zu fehlen. Unklar ist zunächst, wie diese Objekte entstehen. Ebenso
+festzulegen gilt es, wie und wohin die Daten dieser Objekte persistiert oder
+aus der gewählten Persistenz wieder zurückgewonnen werden. Und ohne
+ersichtlichen Grund wird eine C<publish> Methode aufgerufen. Gehen wir die
+Punkten einfach der Reihe nach durch.
+
+Damit unsere Software wartbar wird und Klassen leichter gegen anders
+implementierte Alternativen austauschbar sind, müssen wir uns an zahlreiche
+Prinzipien des Objektorientierten Designs [3] halten. Das Single Responsibility
+Principle fordert, dass eine Klasse nur für eine Aufgabe zuständig ist. Damit
+darf die Sensor Klasse nicht für ihre Erzeugung oder Belange der Persistierung
+zuständig sein. Insofern ist obiger Code absolut ausreichend für diese Klasse.
+
+Was die Entstehung von Objekten angeht, so trennt DDD die Entstehung in eine
+initiale Konstruktion eines Objektes und das Wiedergewinnen einer
+Objekt-Instanz aus der gewählten Persistierung. Ersteres durch eine B<Factory>
+Klasse übernommen, für letzteres ist ein B<Repository> zuständig.
+
+Eine Factory könnte (in unserem Fall extrem einfach) so aussehen:
+
+    package SensorCreator;
+    use Moose;
+    extends 'DDD::Factory';
+    
+    sub new_sensor {
+        my ($self, $sensor_id) = @_;
+        
+        return Sensor->new(
+            id => $sensor_id,
+        );
+    }
+
+Zugegeben, das war nicht gerade eine Herausforderung. Aber um der Trennung
+nach Verantwortungen gerecht zu werden, ist diese Klasse notwendig.
+
+Nicht wesentlich schlimmer ist die Implementierung unseres Aggregates.
+Allerdings müssen wir hierbei sowohl das Wiedergewinnen (C<by_name>) als auch
+das Speichern (C<save>) umsetzen.
+
+    package AllSensors::File;
+    use Moose;
+    extends 'DDD::Repository';
+    
+    sub by_name {
+        my ($self, $sensor_id) = @_;
+    
+        my $file = $self->_file($sensor_id)->stringify;
+        return if !-f $file;
+        
+        return Sensor->load($file);
+    }
+    
+    sub save {
+        my ($self, $sensor) = @_;
+        
+        $sensor->store($self->_file($sensor->id)->stringify);
+    }
+
+Damit bleibt nur noch zu klären, was es mit der C<publish> Methode in unserem
+Aggregat auf sich hat. Hier erfüllen wir die Forderung nach möglichst geringen
+Abhängigkeiten zwischen den einzelnen Bausteinen. Unsere Bausteine sind lose
+miteinander gekoppelt. Ein Aggregat löst bei jeder Veränderung seines
+Zustandes einen C<DomainEvent> aus. Auf das Auftreten bestimmter Ereignisse
+warten beliebig viele (oder kein) C<Service>, um aufgrund der übermittelten
+Zustandsänderungen weitere Aktionen auszuführen. Auf diese Weise können die
+hier nicht behandelten Erweiterungen der Messwert-Komprimierung sowie die
+Alarmierung bei gefährlichen Messwerten erfolgen. Die einzelnen Baugruppen
+wissen jeweils nichts voneinander.
+
+Ein solcher Service könnte in etwa so aussehen:
+
+    package AlarmCheck;
+    use DDD::Service;
+
+    on MeasurementProvided => sub {
+        my ($self, $event) = @_;
+
+        $self->check_alarm(
+            $event->sensor_id->name,
+            $event->measurement
+        );
+    };
+
+    sub check_alarm {
+        my ($self, $sensor_id, $measurement) = @_;
+        
+        # TODO: prüfen und gegebenenfalls Alarmierung
+    }
+
+=head2 Zusammenspiel der Komponenten
+
+So ehrenswert das Ziel auch zunächst klingt, möglichst kleine jeweils nur für
+eine Aufgabe zuständige Klassen zu erstellen, irgendwann muss entschieden
+werden, welche Klasse in unserem Geflecht wofür eingesetzt wird. Auch muss ein
+Weg gefunden werden, die Objekte der von außen ansprechbaren Dienste zu
+instantiieren. Bei größeren Projekten kann das schon eine Herausfoderung sein.
+
+An dieser Stelle greifen wir auf L<Bread::Board> zurück, indem wir eine DSL
+darauf aufbauen, die die DDD-Begrifflichkeiten als Schlüsselworte definiert.
+
+In diesem Vereinfachten Fall könnte unsere Domänen-Definition so aussehen:
+
+    package Domain;
+    use DDD::Domain;
+    
+    has storage_dir => (
+        is  => 'ro',
+        isa => 'Path::Class::Dir',
+    );
+    
+    aggregate 'sensor';
+
+    repository all_sensors => (
+        isa          => 'AllSensors::File',
+        dependencies => {
+            dir => dep('/storage_dir'),
+        },
+    );
+
+    factory 'sensor_creator';
+    
+    service 'measurement';
+
+Immer dann, wenn wir Zugriff zu unserer Domänen-Logik benötigen, erzeugen wir
+einfach eine Instanz der C<Domain> Klasse. Bei dauerhaft laufenden Prozessen
+wie z.B. einer Catalyst- oder Dancer-Anwendung ist es natürlich ratsam,
+diesen Schritt beim Start der Anwendung zu tun, um nicht wertvolle Zeit bei
+jedem Zugriff zu verlieren.
+
+Wie wird eigentlich unsere Domänen-Logik benutzt? Das Lehrbuch schlägt vor,
+dass die API in Form einer C<Application> genannten Schicht durch
+C<Application-Service> Objekte abgedeckt wird. Lediglich diese werden von
+außen angesprochen und decken sämtliche Anwendungsfälle durch entsprechende
+Methoden ab. Außerdem kümmert sich diese Schicht um Transaktionen. Damit soll
+sichergestellt werden, dass sämtliche Daten immer konsistent gehalten werden.
+In unserem einfachen Fall dient der Service "measurement".
+
+    package Measurement;
+    use DDD::Service;
+
+    sub provide_result {
+        my ($self, $sensor_id, $result) = @_;
+
+        my $sensor = $self->domain->all_sensors->by_name($sensor_id)
+            // $self->domain->sensor_creator->new_sensor($sensor_id);
+
+        $sensor->provide_measurement_result($result);
+
+        $self->domain->all_sensors->save($sensor);
+    }
+    
+    sub sensor_by_name {
+        my ($self, $sensor_id) = @_;
+
+        $self->domain
+             ->all_sensors->by_name($sensor_id);
+    }
+
+=head2 Benutzung unserer Domänen-Logik
+
+Die beiden Anwendungsfälle sind relativ einfach abzubilden. Zunächst die
+Anlieferung von Messwerten:
+
+    my $domain = Domain->new(storage_dir => '/path/to/storage');
+    $domain->measurement->provide_result('rio/aussen/temperatur', 42);
+
+Und ebenso einfach ist die Abfrage des letzten Messwertes:
+
+    my $domain = Domain->new(storage_dir => '/path/to/storage');
+    my $sensor = $domain->measurement->sensor_by_name('rio/aussen/temperatur');
+    say "Aussentemperatur in Rio ist: ", $sensor->latest_measurement;
+
+...
+
+Links:
+
+L<[1] http://www.domainlanguage.com/ddd|http://www.domainlanguage.com/ddd>
+
+L<[2] https://vaughnvernon.co/?page_id=168|https://vaughnvernon.co/?page_id=168>
+
+L<[3] http://butunclebob.com/ArticleS.UncleBob.PrinciplesOfOod|http://butunclebob.com/ArticleS.UncleBob.PrinciplesOfOod
+>
+
