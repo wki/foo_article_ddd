@@ -2,43 +2,22 @@
 
 =head1 DDD Workshop bei Erlangen.PM
 
-=begin internal
-
-Zweck des Artikels:
-  * Information über Erlangen.PM Aktivität
-  * Sinn hinter DDD verdeutlichen
-  * ersten Einblick gewinnen
-
-Was steckt hinter DDD? Was ist das?
-  * Vorgehensweise
-  * Von Vogelperspektive bis zum Detail
-  * Anwendung vorgegebener Patterns
-  * Einhaltung von OO Prinzipien (z.B. SOLID)
-
-Was unterscheidet DDD von anderen Vorgehensweisen?
-  * Business steht im Vordergrund, nicht Daten
-  * Sprache ist zentrales Element
-  * Code reflektiert die Sprache
-  * klare Regeln statt schwammiger Ideen
-
-=end internal
-
 =head2 Hintergrund
 
 Bereits im Jahr 2003 hat Eric Evans in seinem Buch "Domain Driven Design" [1]
 eine Vorgehensweise beschrieben, mit der größere IT-Projekte umgesetzt werden
-können. Durch den Einsatz von Patterns mit klar definierten
+können. Durch den Einsatz von Entwurfs-Mustern mit klar definierten
 Verwendungs-Szenarien lässt sich ein großes Projekt dabei schnell in kleine
 Einzelteile zerlegen die dann ebenso problemlos implementierbar sind. In
 praktisch nachvollziehbarer Form wird dieses Vorgehen von Vaughn Vernon in
 seinem 2013 erschienenen Buch "Implementing Domain Driven Design" [2] vertieft
 und erweitert.
 
-Die vordefinierten Patterns regeln im Großen Maßstab die Einbindung fremder
-Systeme und leisten Unterstützung bei der Einteilung der umzusetzenden
-Anforderungen in kleinere Einheiten. Die Struktutierung der erzeugten Klassen
-in Module, Pakete oder die Vergabe von Namensräumen (je nach verwendeter
-Programmiersprache) wird ebenso geregelt.
+Die vordefinierten Muster regeln im großen Maßstab die Einbindung fremder
+Systeme sowie Schnittstellen zur Außenwelt und leisten Unterstützung bei der
+Einteilung der umzusetzenden Anforderungen in kleinere Einheiten. Die
+Struktutierung der erzeugten Klassen in Module, Pakete oder die Vergabe von
+Namensräumen (je nach verwendeter Programmiersprache) wird ebenso abgedeckt.
 
 Sämtliche erzeugen Klassen sind voneinander unabhängig und besitzen
 grundsätlich keine gegenseitigen Wechselwirkungen. Das ermöglicht den
@@ -56,19 +35,20 @@ können.
 
 Anhand eines kleinen Projektes haben wir uns bei Erlangen.PM an einem Samstag
 mit den Grundkonzepten von Domain Driven Design (kurz DDD) vertraut gemacht.
-Die Umsetzung eines Anwendungsfalles möchte ich nachfolgend zeigen.
+Die Umsetzung eines Anwendungsfalles aus dem Beispielprojekt möchte ich
+nachfolgend zeigen.
 
 =head2 Unser Projekt
 
 Der Begriff "Projekt" ist eigentlich zu hoch gegriffen, denn der Umfang der
 Aufgabenstellung wäre bequem an einem Sonntag nachmittag zu erledigen. Aber
-für Lernzwecke ist ein nicht zu gigantischer Umfang gerade Recht.
+für Lernzwecke ist eine nicht zu umfangreiche Aufgabenstellung gerade richtig.
 
 Wir wollen ein System erstellen, das Messwerte (z.B. Temperatur) von
-entfernten Sensoren entgegen nimmt und speichert. Die gespeicherten Messwerte
+entfernten Sensoren entgegennimmt und speichert. Die gespeicherten Messwerte
 sollen dann in einer weiteren Ausbaustufe zu größeren Zeitintervallen (z.B.
 Stunde oder Tag) zusammengefasst werden, denn für die gegebene Anforderung
-sind für die vergangene Woche bestenfalls Minimal- oder Maximal-Werte
+sind für vergangene Zeiträume bestenfalls Minimal- oder Maximal-Werte
 relevant, die einzelnen Ablesungen hingegen nicht mehr. Immer wenn ein neuer
 Messwert eintrifft, soll darüber entschieden werden, ob ein Alarm ausgelöst
 werden muss. Über ein geeignetes Interface soll eine Anzeige der Messwerte der
@@ -78,7 +58,8 @@ Da Sprache das zentrale Element von DDD ist, fangen wir damit an, die Sprache
 zu entwickeln. Hätten wir einen Auftraggeber, so könnten wir den Großteil der
 Sprache vermutlich aus den Anforderungs-Dokumenten herauslesen, müssten jedoch
 für Durchgängigkeit und Widerspruchsfreiheit sorgen. In unserem Fall fällt die
-Sprache einfach aus:
+Sprache einfach aus. Da wir in Perl englische Schlüsselworte einsetzen,
+greifen wir ebenfalls zu englisch als die Sprache der Wahl.
 
 =over
 
@@ -109,13 +90,14 @@ wenn ein neuer Messwert angeliefert wird, werden die notwendigen Attribute
 gesetzt. Fertig.
 
 Aber das hat mit der fachlichen Logik unseres Projektes nichts zu tun. Beim
-Einsatz von DDD werden keinesfalls irgendwelche Attribute gesetzt. Blicken wir
-zurück auf die Definition unserer Sprache so lautet die Formulierung beim
-Anwendungsfall "provide measurement result". Damit unser Code diesen Fall
-abdeckt und verständlich macht, müssen wir eine Methode
-C<provide_measurement_result> erzeugen, die zum Anliefern eines neuen
-Messwertes verwendet wird. Damit niemand aus Versehen doch Attribute
-verändert, könnten wir sie noch vor Überschreiben schützen.
+Einsatz von DDD werden niemals von außen irgendwelche Attribute gesetzt. Der
+Grund dafür ist, dass das Setzen von Attributen nichts mit den umzusetzenden
+Anwendungsfällen zu tun hat. Blicken wir zurück auf die Definition unserer
+Sprache, so lautet die Formulierung bei unserem Anwendungsfall "provide
+measurement result". Damit unser Code diesen Fall abdeckt und verständlich
+macht, müssen wir eine Methode C<provide_measurement_result> erzeugen, die zum
+Anliefern eines neuen Messwertes verwendet wird. Damit niemand aus Versehen
+doch Attribute verändert, könnten wir sie noch vor Überschreiben schützen.
 
 In der Welt von DDD werden Dinge, die von Außen angesprochen werden und
 identifizierbar sind (in unserem Fall über den eindeutigen Namen), in Form
@@ -130,14 +112,12 @@ oder Rollen fehlen teilweise und unwichtige Details sind ausgelassen worden.
     
     has id => (
         is     => 'ro',
-        isa    => 'SensorId', # a Moose type
-        coerce => 1,          # will allow a string here
+        isa    => 'SensorId', # ein Moose Typ
     );
     
     has latest_measurement => (
         is     => 'rw',
-        isa    => 'Measurement', # a Moose type
-        coerce => 1,             # will allow an int here
+        isa    => 'Measurement', # ein Moose Typ
         writer => '_set_latest_measurement',
     );
     
@@ -153,19 +133,20 @@ oder Rollen fehlen teilweise und unwichtige Details sind ausgelassen worden.
         );
     }
 
-So einfach dieser Code auch aussieht, scheinen doch eine Menge an Funktionen
-zu fehlen. Unklar ist zunächst, wie diese Objekte entstehen. Ebenso
-festzulegen gilt es, wie und wohin die Daten dieser Objekte persistiert oder
-aus der gewählten Persistenz wieder zurückgewonnen werden. Und ohne
-ersichtlichen Grund wird eine C<publish> Methode aufgerufen. Gehen wir die
-Punkten einfach der Reihe nach durch.
+So einfach dieser Code auch aussieht, scheinen eine Menge an Funktionen zu
+fehlen. Unklar ist zunächst, wie diese Objekte entstehen. Ebenso festzulegen
+gilt es, wie und wohin die Daten dieser Objekte persistiert oder aus der
+gewählten Persistenz wieder zurückgewonnen werden. Und ohne ersichtlichen
+Grund wird eine C<publish> Methode aufgerufen. Gehen wir die Punkte einfach
+der Reihe nach durch.
 
 Damit unsere Software wartbar wird und Klassen leichter gegen anders
 implementierte Alternativen austauschbar sind, müssen wir uns an zahlreiche
-Prinzipien des Objektorientierten Designs [3] halten. Das Single Responsibility
-Principle fordert, dass eine Klasse nur für eine Aufgabe zuständig ist. Damit
-darf die Sensor Klasse nicht für ihre Erzeugung oder Belange der Persistierung
-zuständig sein. Insofern ist obiger Code absolut ausreichend für diese Klasse.
+Prinzipien des Objektorientierten Designs [3] halten. Das Single
+Responsibility Principle fordert, dass eine Klasse nur für eine Aufgabe
+zuständig ist. Damit darf die Sensor Klasse nicht für ihre Erzeugung oder
+Belange der Persistierung zuständig sein. Insofern ist obiger Code absolut
+ausreichend für diese Klasse.
 
 Was die Entstehung von Objekten angeht, so trennt DDD die Entstehung in eine
 initiale Konstruktion eines Objektes und das Wiedergewinnen einer
@@ -191,7 +172,9 @@ nach Verantwortungen gerecht zu werden, ist diese Klasse notwendig.
 
 Nicht wesentlich schlimmer ist die Implementierung unseres Aggregates.
 Allerdings müssen wir hierbei sowohl das Wiedergewinnen (C<by_name>) als auch
-das Speichern (C<save>) umsetzen.
+das Speichern (C<save>) umsetzen. In diesem Beispiel wählen wir die
+Persistierung als Dateien im JSON-Format. Die Logik im Hintergrund wird durch
+L<MooseX::Storage> übernommen und ist in den Basisklassen definiert.
 
     package AllSensors::File;
     use Moose;
@@ -217,11 +200,11 @@ Aggregat auf sich hat. Hier erfüllen wir die Forderung nach möglichst geringen
 Abhängigkeiten zwischen den einzelnen Bausteinen. Unsere Bausteine sind lose
 miteinander gekoppelt. Ein Aggregat löst bei jeder Veränderung seines
 Zustandes einen C<DomainEvent> aus. Auf das Auftreten bestimmter Ereignisse
-warten beliebig viele (oder kein) C<Service>, um aufgrund der übermittelten
+warten beliebig viele (oder kein) C<Service>, um bei übermittelten
 Zustandsänderungen weitere Aktionen auszuführen. Auf diese Weise können die
 hier nicht behandelten Erweiterungen der Messwert-Komprimierung sowie die
-Alarmierung bei gefährlichen Messwerten erfolgen. Die einzelnen Baugruppen
-wissen jeweils nichts voneinander.
+Alarmierung bei gefährlichen Messwerten eingebunden werden. Die einzelnen
+Baugruppen wissen jeweils nichts voneinander.
 
 Ein solcher Service könnte in etwa so aussehen:
 
@@ -254,7 +237,7 @@ instantiieren. Bei größeren Projekten kann das schon eine Herausfoderung sein.
 An dieser Stelle greifen wir auf L<Bread::Board> zurück, indem wir eine DSL
 darauf aufbauen, die die DDD-Begrifflichkeiten als Schlüsselworte definiert.
 
-In diesem Vereinfachten Fall könnte unsere Domänen-Definition so aussehen:
+In diesem vereinfachten Fall könnte unsere Domänen-Definition so aussehen:
 
     package Domain;
     use DDD::Domain;
@@ -277,6 +260,10 @@ In diesem Vereinfachten Fall könnte unsere Domänen-Definition so aussehen:
     
     service 'measurement';
 
+Dabei entsteht eine Klasse, entsprechend der DDD-Schlüsselworte Attribute
+oder Methoden bereit stellt, mittels derer die diversen Bestandteile
+ansprechbar sind.
+
 Immer dann, wenn wir Zugriff zu unserer Domänen-Logik benötigen, erzeugen wir
 einfach eine Instanz der C<Domain> Klasse. Bei dauerhaft laufenden Prozessen
 wie z.B. einer Catalyst- oder Dancer-Anwendung ist es natürlich ratsam,
@@ -289,7 +276,8 @@ C<Application-Service> Objekte abgedeckt wird. Lediglich diese werden von
 außen angesprochen und decken sämtliche Anwendungsfälle durch entsprechende
 Methoden ab. Außerdem kümmert sich diese Schicht um Transaktionen. Damit soll
 sichergestellt werden, dass sämtliche Daten immer konsistent gehalten werden.
-In unserem einfachen Fall dient der Service "measurement".
+In unserem einfachen Fall genügt ein einziger Service "measurement". Auf
+Transaktions-Management verzichten wir zunächst.
 
     package Measurement;
     use DDD::Service;
@@ -297,19 +285,22 @@ In unserem einfachen Fall dient der Service "measurement".
     sub provide_result {
         my ($self, $sensor_id, $result) = @_;
 
-        my $sensor = $self->domain->all_sensors->by_name($sensor_id)
-            // $self->domain->sensor_creator->new_sensor($sensor_id);
+        my $domain = $self->domain;
+        
+        my $sensor = $domain->all_sensors->by_name($sensor_id)
+            // $domain->sensor_creator->new_sensor($sensor_id);
 
         $sensor->provide_measurement_result($result);
 
-        $self->domain->all_sensors->save($sensor);
+        $domain->all_sensors->save($sensor);
     }
     
     sub sensor_by_name {
         my ($self, $sensor_id) = @_;
 
-        $self->domain
-             ->all_sensors->by_name($sensor_id);
+        my $domain = $self->domain;
+        
+        return $domain->all_sensors->by_name($sensor_id);
     }
 
 =head2 Benutzung unserer Domänen-Logik
@@ -326,7 +317,19 @@ Und ebenso einfach ist die Abfrage des letzten Messwertes:
     my $sensor = $domain->measurement->sensor_by_name('rio/aussen/temperatur');
     say "Aussentemperatur in Rio ist: ", $sensor->latest_measurement;
 
-...
+=head2 Fazit
+
+Was im Kleinen etwas schwerfällig aussieht und umständlich wirkt, beinhaltet
+eine saubere und strukturierte Geschäftslogik. Durch die strikte Verwendung
+vorgegebener Muster und Strukturen erhält man automatisch aufgeräumten
+übersichtlichen Programm-Code, der durch die Größe der Klassen und die lose
+Koppelung sehr leicht auf annähernd beliebig viele Schultern (bzw. Köpfe)
+verteilbar und mit relativ einfachen Mitteln testbar ist.
+
+Wer neugierig ist, kann gerne einen Blick auf die noch frühe Version meiner
+DDD-Basisklassen unter [4] werfen oder sich das Beispiel-Projekt [5] in vollem
+Umfang studieren. Anregungen, Kritik oder Verbesserungsvorschläge sind
+jederzeit willkommen, gerne kann der Workshop nochmals abgehalten werden.
 
 Links:
 
@@ -334,6 +337,8 @@ L<[1] http://www.domainlanguage.com/ddd|http://www.domainlanguage.com/ddd>
 
 L<[2] https://vaughnvernon.co/?page_id=168|https://vaughnvernon.co/?page_id=168>
 
-L<[3] http://butunclebob.com/ArticleS.UncleBob.PrinciplesOfOod|http://butunclebob.com/ArticleS.UncleBob.PrinciplesOfOod
->
+L<[3] http://butunclebob.com/ArticleS.UncleBob.PrinciplesOfOod|http://butunclebob.com/ArticleS.UncleBob.PrinciplesOfOod>
 
+L<[4] https://github.com/wki/DDD|https://github.com/wki/DDD>
+
+L<[5] https://github.com/wki/DDD-StatisticsCollector|https://github.com/wki/DDD-StatisticsCollector>
